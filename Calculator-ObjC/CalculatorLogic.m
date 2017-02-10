@@ -9,39 +9,66 @@
 #import "CalculatorLogic.h"
 
 @interface CalculatorLogic()
-@property(nonatomic, strong) NSMutableArray* operandStack;
+@property(readonly) NSMutableArray* programStack;
 @end
 
 @implementation CalculatorLogic
 
-@synthesize operandStack = _operandStack;
+@synthesize programStack = _programStack;
 
--(NSMutableArray *)operandStack {
-    if(_operandStack == nil){
-        _operandStack =  [[NSMutableArray alloc] init];
+-(NSMutableArray *)programStack {
+    if(_programStack == nil){
+        _programStack =  [[NSMutableArray alloc] init];
     }
-    return _operandStack;
+    return _programStack;
 }
 
 
 - (void) pushOperand: (double) operand{
     NSNumber* result = [NSNumber numberWithDouble:operand];
-    [self.operandStack addObject: result];
+    [self.programStack addObject: result];
 }
 
 - (double) performOperation: (NSString *) operation {
-    double result  = 0;
+    [self.programStack addObject: operation];
+    return [CalculatorLogic runProgram: self.program];
+}
+
+-(id) program {
+    return [self.programStack copy];
+}
+
++ (double) popOperandOffStack: (NSMutableArray *) stack {
+    double result = 0;
+    id lastObject = [stack lastObject];
     
-    if ([operation isEqualToString:@"+"]){
-        result = [self popOperand] + [self popOperand];
+    if(lastObject) {
+        [stack removeLastObject];
     }
+    
+    if([lastObject isKindOfClass:[NSString class]]){
+        NSString* topOfStack = lastObject;
+        if([topOfStack isEqualToString:@"+"]) {
+            result = [self popOperandOffStack: stack] + [self popOperandOffStack: stack];
+        }
+    } else if([lastObject isKindOfClass:[NSNumber class]]) {
+        return [lastObject doubleValue];
+    }
+    
     return result;
 }
 
-- (double) popOperand {
-    NSNumber*  operandObject = [self.operandStack lastObject];
-    [self.operandStack removeLastObject];
-    return [operandObject doubleValue];
++ (double) runProgram:(id)program{
+    NSMutableArray* stack;
+    
+    if([program isKindOfClass:[NSArray class]]){
+        stack = [program mutableCopy];
+    }
+    return [self popOperandOffStack: stack];
+}
+
++ (NSString *) descriptionOfProgram:(id)program {
+    return @"TODO";
 }
 
 @end
